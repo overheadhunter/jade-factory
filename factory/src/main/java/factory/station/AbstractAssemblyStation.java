@@ -4,11 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.ThreadedBehaviourFactory;
 import factory.order.Order;
 
 abstract class AbstractAssemblyStation extends AbstractStation {
 	
 	private static final long serialVersionUID = -2934606720355101360L;
+	private static final ThreadedBehaviourFactory THREADED_BEHAVIOUR_FACTORY = new ThreadedBehaviourFactory();
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractAssemblyStation.class);
 	
 	@Override
@@ -16,7 +18,7 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 		super.setup();
 		
 		// add behaviours
-		this.addBehaviour(new AssemblyBehaviour());
+		this.addBehaviour(THREADED_BEHAVIOUR_FACTORY.wrap(new AssemblyBehaviour()));
 	}
 	
 	protected abstract void assemble(Order order) throws InterruptedException;

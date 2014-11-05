@@ -1,9 +1,11 @@
 package factory.station;
 
+import jade.core.Agent;
+import jade.core.behaviours.TickerBehaviour;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jade.core.behaviours.CyclicBehaviour;
 import factory.order.Order;
 
 
@@ -16,7 +18,7 @@ public class OrderEntryStation extends AbstractStation {
 	protected void setup() {
 		super.setup();
 		
-		this.addBehaviour(new OrderCreatingBehaviour());
+		this.addBehaviour(new OrderCreatingBehaviour(this, 7500));
 	}
 
 	@Override
@@ -32,19 +34,22 @@ public class OrderEntryStation extends AbstractStation {
 	/**
 	 * Assembles the next order in queue.
 	 */
-	private class OrderCreatingBehaviour extends CyclicBehaviour {
+	private class OrderCreatingBehaviour extends TickerBehaviour {
 		
+		public OrderCreatingBehaviour(Agent agent, long period) {
+			super(agent, period);
+		}
+
 		private static final long serialVersionUID = 4362396144651504823L;
 
 		@Override
-		public void action() {
+		public void onTick() {
 			try {
 				final Order order = new Order();
 				putFinishedOrder(order);
 				LOG.info("New order " + order);
-				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				LOG.error("Assembly failed.", e);
+				LOG.error("Failed to enqueue new order.", e);
 			}
 		}
 		

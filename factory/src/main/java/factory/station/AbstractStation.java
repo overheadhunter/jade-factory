@@ -8,10 +8,8 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -19,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import factory.common.Constants;
+import factory.common.MessageUtil;
 import factory.order.Order;
 
 abstract class AbstractStation extends Agent {
@@ -42,7 +41,7 @@ abstract class AbstractStation extends Agent {
 		dfd.addServices(sd);
 		try {
 			DFService.register(this, dfd);
-			LOG.info("Registered station " + getStationName());
+			LOG.info("Registered station " + getStationName() + " of type " + getServiceType().name());
 		} catch (FIPAException fe) {
 			LOG.error("Error during agent registration.", fe);
 		}
@@ -56,6 +55,7 @@ abstract class AbstractStation extends Agent {
 	protected void takeDown() {
 		try {
 			DFService.deregister(this);
+			LOG.info("Deregistered station " + getStationName());
 		} catch (FIPAException fe) {
 			LOG.error("Error during agent deregistration.", fe);
 		}
@@ -85,7 +85,8 @@ abstract class AbstractStation extends Agent {
 		public void action() {
 			final MessageTemplate mtMatchingConversationId = MessageTemplate.MatchConversationId(CONV_ID_PICKUP);
 			final ACLMessage request = myAgent.receive(mtMatchingConversationId);
-			if (request != null && request.getPerformative() == ACLMessage.CFP) {
+			if (request != null && request.getPerformative() == ACLMessage.CFP && !outQueue.isEmpty()) {
+				LOG.info(getStationName() + " makes a proposal to pick up item " + outQueue.peek());
 				this.makeProposal(request);
 			} else if (request != null && request.getPerformative() == ACLMessage.ACCEPT_PROPOSAL) {
 				this.handOverItem(request);
@@ -101,9 +102,11 @@ abstract class AbstractStation extends Agent {
 		
 		private void handOverItem(ACLMessage request) {
 			try {
+				final Order order = outQueue.take();
+				LOG.info(getStationName() + " hands over item " + order);
 				final ACLMessage reply = request.createReply();
 				reply.setPerformative(ACLMessage.INFORM);
-				reply.setContentObject(outQueue.take());
+				reply.setContentObject(order);
 				myAgent.send(reply);
 			} catch (IOException | InterruptedException e) {
 				LOG.error("Failed to hand over order.", e);
@@ -126,7 +129,7 @@ abstract class AbstractStation extends Agent {
 			final MessageTemplate mt = MessageTemplate.MatchConversationId("enqueue");
 			final ACLMessage msg = myAgent.receive(mt);
 			if (msg != null) {
-				final Order order = unwrapPayload(msg);
+				final Order order = MessageUtil.unwrapPayload(msg);
 				final ACLMessage reply = msg.createReply();
 				if (order != null && inQueue.offer(order)) {
 					reply.setPerformative(ACLMessage.INFORM);
@@ -137,18 +140,6 @@ abstract class AbstractStation extends Agent {
 				}
 				myAgent.send(reply);
 			}
-		}
-		
-		private Order unwrapPayload(ACLMessage msg) {
-			try {
-				final Serializable payload = msg.getContentObject();
-				if (payload instanceof Order) {
-					return (Order) payload;
-				}
-			} catch (UnreadableException e) {
-				LOG.error("Assembly failed.", e);
-			}
-			return null;
 		}
 		
 	}
