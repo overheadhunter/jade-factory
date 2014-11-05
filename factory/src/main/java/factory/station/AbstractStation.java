@@ -1,6 +1,5 @@
 package factory.station;
 
-import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
@@ -19,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import factory.common.Constants;
 import factory.order.Order;
 
 abstract class AbstractStation extends Agent {
@@ -48,7 +48,7 @@ abstract class AbstractStation extends Agent {
 		}
 		
 		// add behaviours:
-		this.addBehaviour(new DequeueingBehaviour());
+		this.addBehaviour(new PickupOfferingBehaviour());
 		this.addBehaviour(new EnqueueingBehaviour());
 	}
 	
@@ -75,50 +75,43 @@ abstract class AbstractStation extends Agent {
 	protected abstract String getStationName();
 	
 	/**
-	 * Informs the youBot about finished orders.
+	 * Responds to pickup CFPs from youBots, if outgoing queue is not empty.
 	 */
-	private class DequeueingBehaviour extends CyclicBehaviour {
+	private class PickupOfferingBehaviour extends CyclicBehaviour implements Constants {
 		
 		private static final long serialVersionUID = -5699647452534534818L;
 
 		@Override
 		public void action() {
-			try {
-				final DFAgentDescription[] transportAgents = queryTransportAgents();
-				
-				final ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-				cfp.setContentObject(outQueue.take());
-				cfp.setConversationId("transportation-todo-externalize-conversation-ids");
-				cfp.setReplyWith("cfp" + System.currentTimeMillis());
-				for (DFAgentDescription dfAgentDescription : transportAgents) {
-					cfp.addReceiver(dfAgentDescription.getName());
-				}
-				myAgent.send(cfp);
-				
-				final MessageTemplate mt = MessageTemplate.and(MessageTemplate.MatchConversationId(cfp.getConversationId()), MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
-				ACLMessage reply = myAgent.receive(mt);
-				
-				// TODO ...
-			} catch (FIPAException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			final MessageTemplate mtMatchingConversationId = MessageTemplate.MatchConversationId(CONV_ID_PICKUP);
+			final ACLMessage request = myAgent.receive(mtMatchingConversationId);
+			if (request != null && request.getPerformative() == ACLMessage.CFP) {
+				this.makeProposal(request);
+			} else if (request != null && request.getPerformative() == ACLMessage.ACCEPT_PROPOSAL) {
+				this.handOverItem(request);
 			}
 		}
 		
-		private DFAgentDescription[] queryTransportAgents() throws FIPAException {
-			final DFAgentDescription template = new DFAgentDescription();
-			final ServiceDescription sd = new ServiceDescription();
-			sd.setType("transportation-todo-type");
-			template.addServices(sd);
-			return DFService.search(myAgent, template);
+		private void makeProposal(ACLMessage request) {
+			final ACLMessage reply = request.createReply();
+			reply.setPerformative(ACLMessage.PROPOSE);
+			reply.setContent(Integer.toString(outQueue.size()));
+			myAgent.send(reply);
 		}
 		
+		private void handOverItem(ACLMessage request) {
+			try {
+				final ACLMessage reply = request.createReply();
+				reply.setPerformative(ACLMessage.INFORM);
+				reply.setContentObject(outQueue.take());
+				myAgent.send(reply);
+			} catch (IOException | InterruptedException e) {
+				LOG.error("Failed to hand over order.", e);
+				final ACLMessage reply = request.createReply();
+				reply.setPerformative(ACLMessage.FAILURE);
+				myAgent.send(reply);
+			}
+		}
 	}
 	
 	/**
