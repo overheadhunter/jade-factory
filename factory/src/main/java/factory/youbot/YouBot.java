@@ -31,13 +31,14 @@ import jade.core.AID;
 import jade.core.behaviours.*;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 public class YouBot extends Agent implements Constants {
-	private String status, location;
+	private String status;
 		
 	private AID[] stationAgents;
 	
@@ -102,7 +103,7 @@ for work
 	private class RequestPerformer extends Behaviour {
 		
 		private AID commitedStation; // The Station to which the youBot commits working for 
-		private int smallestQueue;  // The smallest Queue
+		private int longestQueue;  // The longest received Station Queue
 		private int repliesCnt = 0; // The counter of replies from station agents
 		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
@@ -125,16 +126,15 @@ for work
 				step = 1;
 				break;
 			case 1:
-				//STAND! 29.10.2014
 				// Receive TransportationTask replies from Stations
 				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
 					// Reply received
 					// This is a transportation task offer because specified in mt - template
 					int queue = Integer.parseInt(reply.getContent());
-					if (commitedStation == null || queue < smallestQueue) {
+					if (commitedStation == null || queue < longestQueue) {
 						// This is the best offer at present
-						smallestQueue = queue;
+						longestQueue = queue;
 						commitedStation = reply.getSender();
 					}
 					}
@@ -170,10 +170,25 @@ for work
 					// commitment reply received
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						// we can execute transportation
-						//PING 5s for virtualizing transport-time
+						//sleep 5s for virtualizing transport-time
+						try {
+							Thread.sleep(5000);
+						} catch (InterruptedException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 						
-						System.out.println("successfully commited wo work for agent "+reply.getSender().getName() + " starting to work now.");
-						System.out.println("Queue = "+smallestQueue);
+						try {
+							Object item = reply.getContentObject();
+						} catch (UnreadableException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							System.out.println("couldn receive Station´s Object");
+						}
+						status = "loaded";
+						
+						System.out.println("successfully commited to work for agent "+reply.getSender().getName() + " starting to work now.");
+						System.out.println("Queue = "+longestQueue);
 						
 						//myAgent.doDelete();
 					}
