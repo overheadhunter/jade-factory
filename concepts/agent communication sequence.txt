@@ -1,0 +1,28 @@
+title Enqueue for assembly (conversationId: "enqueue")
+
+YouBot->Station: CFP (assembly task)
+note right of Station: Is station capable of task?
+Station->YouBot: Proposal (with IN queue length)
+
+note left of YouBot: Choose station\nwith shortest IN queue
+
+YouBot->Station: Accept
+Station->YouBot: Inform "ok"
+
+
+
+
+
+
+
+
+title Dequeue for transport (conversationId: "dequeue")
+
+YouBot->Station: CFP ("Hi, I'm free")
+note right of Station: Has finished items?
+Station->YouBot: Proposal (length of OUT queue)
+
+note left of YouBot: Choose station with\nlongest OUT queue
+
+YouBot->Station: Accept
+Station->YouBot: Inform "ok"
