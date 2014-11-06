@@ -78,6 +78,7 @@ abstract class AbstractStation extends Agent implements Proposing {
 
 	@Override
 	public ACLMessage createResponseForCfp(String conversationId, ACLMessage request) {
+		LOG.debug("{} received CFP.", getStationName());
 		if (Constants.CONV_ID_PICKUP.equals(conversationId) && !outQueue.isEmpty()) {
 			final ACLMessage response = request.createReply();
 			response.setPerformative(ACLMessage.PROPOSE);
@@ -89,11 +90,11 @@ abstract class AbstractStation extends Agent implements Proposing {
 	}
 
 	@Override
-	public ACLMessage createResponseForProposal(String conversationId, ACLMessage request) throws ResponseCreationException {
+	public ACLMessage createResponseForAcceptedProposal(String conversationId, ACLMessage request) throws ResponseCreationException {
 		if (Constants.CONV_ID_PICKUP.equals(conversationId)) {
 			try {
 				final Order order = outQueue.poll();
-				LOG.info(getStationName() + " hands over item " + order);
+				LOG.debug("{} received ACCEPT_PROPOSAL and hands over item {}.", getStationName(), order);
 				final ACLMessage response = request.createReply();
 				response.setPerformative(ACLMessage.INFORM);
 				response.setContentObject(order);

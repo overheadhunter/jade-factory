@@ -79,7 +79,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 					bestProposal = proposal;
 				}
 			} catch (NumberFormatException e) {
-				LOG.warn("Unexpected message content: " + proposal.getContent() + ". Expected a number.");
+				LOG.warn("Unexpected message content: {}. Expected a number.", proposal.getContent());
 			}
 		}
 		return bestProposal;
@@ -107,8 +107,10 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 
 	@Override
 	public void didReceiveResponseForAcceptedProposal(String conversationId, ACLMessage response) {
-		currentPayload = MessageUtil.unwrapPayload(response);
-		LOG.info(getAID().getName() + " received order " + currentPayload);
+		if (CONV_ID_PICKUP.equals(conversationId)) {
+			currentPayload = MessageUtil.unwrapPayload(response);
+			LOG.info("{} received order {}", getAID().getName(), currentPayload);
+		}
 	}
 	
 	/**

@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import factory.common.ResponseCreationException;
 
+/**
+ * Cycling behaviour listening to CFPs and creating responses.
+ */
 public class ProposingBehaviour extends CyclicBehaviour {
 	
 	private static final long serialVersionUID = 2201978103845444321L;
@@ -59,7 +62,7 @@ public class ProposingBehaviour extends CyclicBehaviour {
 	
 	private void respondToAcceptProposal(ACLMessage request) {
 		try {
-			ACLMessage response = proposing.createResponseForProposal(conversationId, request);
+			ACLMessage response = proposing.createResponseForAcceptedProposal(conversationId, request);
 			if (response != null) {
 				myAgent.send(response);
 			}
@@ -70,6 +73,9 @@ public class ProposingBehaviour extends CyclicBehaviour {
 		}
 	}
 	
+	/**
+	 * Delegate interface for all decisions to be made by the agent responding to a CFP.
+	 */
 	public interface Proposing {
 		
 		/**
@@ -80,7 +86,7 @@ public class ProposingBehaviour extends CyclicBehaviour {
 		/**
 		 * @return response object or <code>null</code>, if not responding to request.
 		 */
-		ACLMessage createResponseForProposal(String conversationId, ACLMessage request) throws ResponseCreationException;
+		ACLMessage createResponseForAcceptedProposal(String conversationId, ACLMessage request) throws ResponseCreationException;
 		
 	}
 

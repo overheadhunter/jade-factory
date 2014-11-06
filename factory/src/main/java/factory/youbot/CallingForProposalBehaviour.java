@@ -21,6 +21,12 @@ import org.slf4j.LoggerFactory;
 
 import factory.common.ResponseCreationException;
 
+/**
+ * One shot CFP.<br/>
+ * Calls for proposals and waits until a given deadline is reached, then accepts the best proposal (if any).
+ * 
+ * @see CallingForProposal
+ */
 public class CallingForProposalBehaviour extends OneShotBehaviour {
 	
 	private static final long serialVersionUID = -8705478409838715143L;
@@ -137,6 +143,9 @@ public class CallingForProposalBehaviour extends OneShotBehaviour {
 		
 	}
 	
+	/**
+	 * Delegate interface for all decisions to be made by the agent, who creates a CFP.
+	 */
 	public interface CallingForProposal {
 		
 		/**
@@ -170,6 +179,9 @@ public class CallingForProposalBehaviour extends OneShotBehaviour {
 		 */
 		long waitForResponseForAcceptedProposal(String conversationId);
 		
+		/**
+		 * Informs the caller about the incoming response.
+		 */
 		void didReceiveResponseForAcceptedProposal(String conversationId, ACLMessage response);
 		
 	}
