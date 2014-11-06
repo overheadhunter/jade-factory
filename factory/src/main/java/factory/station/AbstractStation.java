@@ -18,20 +18,22 @@ import org.slf4j.LoggerFactory;
 
 import factory.common.Constants;
 import factory.common.MessageUtil;
+import factory.common.ResponseCreationException;
 import factory.order.Order;
+import factory.station.ProposingBehaviour.Proposing;
 
-abstract class AbstractStation extends Agent {
-	
+abstract class AbstractStation extends Agent implements Proposing {
+
 	private static final long serialVersionUID = -504573009972336872L;
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractStation.class);
-	
+
 	private final BlockingQueue<Order> inQueue = new LinkedBlockingQueue<>();
 	private final BlockingQueue<Order> outQueue = new LinkedBlockingQueue<>();
 
 	@Override
 	protected void setup() {
 		super.setup();
-		
+
 		// register service:
 		final DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
@@ -45,12 +47,12 @@ abstract class AbstractStation extends Agent {
 		} catch (FIPAException fe) {
 			LOG.error("Error during agent registration.", fe);
 		}
-		
+
 		// add behaviours:
-		this.addBehaviour(new PickupOfferingBehaviour());
+		this.addBehaviour(new ProposingBehaviour(Constants.CONV_ID_PICKUP, this));
 		this.addBehaviour(new EnqueueingBehaviour());
 	}
-	
+
 	@Override
 	protected void takeDown() {
 		try {
@@ -61,67 +63,54 @@ abstract class AbstractStation extends Agent {
 		}
 		super.takeDown();
 	}
-	
+
 	protected final Order takeNextOrder() throws InterruptedException {
 		return inQueue.take();
 	}
-	
+
 	protected final void putFinishedOrder(Order order) throws InterruptedException {
 		outQueue.put(order);
 	}
-	
-	protected abstract ServiceType getServiceType();
-	
-	protected abstract String getStationName();
-	
-	/**
-	 * Responds to pickup CFPs from youBots, if outgoing queue is not empty.
-	 */
-	private class PickupOfferingBehaviour extends CyclicBehaviour implements Constants {
-		
-		private static final long serialVersionUID = -5699647452534534818L;
 
-		@Override
-		public void action() {
-			final MessageTemplate mtMatchingConversationId = MessageTemplate.MatchConversationId(CONV_ID_PICKUP);
-			final ACLMessage request = myAgent.receive(mtMatchingConversationId);
-			if (request != null && request.getPerformative() == ACLMessage.CFP && !outQueue.isEmpty()) {
-				LOG.info(getStationName() + " makes a proposal to pick up item " + outQueue.peek());
-				this.makeProposal(request);
-			} else if (request != null && request.getPerformative() == ACLMessage.ACCEPT_PROPOSAL) {
-				this.handOverItem(request);
-			}
-		}
-		
-		private void makeProposal(ACLMessage request) {
-			final ACLMessage reply = request.createReply();
-			reply.setPerformative(ACLMessage.PROPOSE);
-			reply.setContent(Integer.toString(outQueue.size()));
-			myAgent.send(reply);
-		}
-		
-		private void handOverItem(ACLMessage request) {
-			try {
-				final Order order = outQueue.take();
-				LOG.info(getStationName() + " hands over item " + order);
-				final ACLMessage reply = request.createReply();
-				reply.setPerformative(ACLMessage.INFORM);
-				reply.setContentObject(order);
-				myAgent.send(reply);
-			} catch (IOException | InterruptedException e) {
-				LOG.error("Failed to hand over order.", e);
-				final ACLMessage reply = request.createReply();
-				reply.setPerformative(ACLMessage.FAILURE);
-				myAgent.send(reply);
-			}
+	protected abstract ServiceType getServiceType();
+
+	protected abstract String getStationName();
+
+	@Override
+	public ACLMessage createResponseForCfp(String conversationId, ACLMessage request) {
+		if (Constants.CONV_ID_PICKUP.equals(conversationId) && !outQueue.isEmpty()) {
+			final ACLMessage response = request.createReply();
+			response.setPerformative(ACLMessage.PROPOSE);
+			response.setContent(Integer.toString(outQueue.size()));
+			return response;
+		} else {
+			return null;
 		}
 	}
-	
+
+	@Override
+	public ACLMessage createResponseForProposal(String conversationId, ACLMessage request) throws ResponseCreationException {
+		if (Constants.CONV_ID_PICKUP.equals(conversationId)) {
+			try {
+				final Order order = outQueue.poll();
+				LOG.info(getStationName() + " hands over item " + order);
+				final ACLMessage response = request.createReply();
+				response.setPerformative(ACLMessage.INFORM);
+				response.setContentObject(order);
+				return response;
+			} catch (IOException e) {
+				throw new ResponseCreationException("Failed to hand over order.", e);
+			}
+		} else {
+			return null;
+		}
+	}
+
 	/**
 	 * Accepts one order from a youBot.
 	 */
 	private class EnqueueingBehaviour extends CyclicBehaviour {
-		
+
 		private static final long serialVersionUID = -6855574067206356572L;
 
 		@Override
@@ -141,7 +130,7 @@ abstract class AbstractStation extends Agent {
 				myAgent.send(reply);
 			}
 		}
-		
+
 	}
 
 }
