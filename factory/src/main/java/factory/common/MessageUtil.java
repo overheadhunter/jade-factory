@@ -8,8 +8,6 @@ import java.io.Serializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import factory.order.Order;
-
 public final class MessageUtil {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(MessageUtil.class);
@@ -18,11 +16,11 @@ public final class MessageUtil {
 		throw new IllegalStateException("not instantiable.");
 	}
 	
-	public static Order unwrapPayload(ACLMessage msg) {
+	public static <T extends Serializable> T unwrapPayload(ACLMessage msg, Class<T> type) {
 		try {
 			final Serializable payload = msg.getContentObject();
-			if (payload instanceof Order) {
-				return (Order) payload;
+			if (type.isAssignableFrom(payload.getClass())) {
+				return type.cast(payload);
 			}
 		} catch (UnreadableException e) {
 			LOG.error("Unwrapping message payload failed.", e);

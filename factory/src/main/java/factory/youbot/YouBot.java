@@ -143,7 +143,7 @@ public class YouBot extends Agent implements Constants {
 				} else if (proposal.getPerformative() == ACLMessage.INFORM) {
 					workOffers.clear();
 					busy = true;
-					currentPayload = MessageUtil.unwrapPayload(proposal);
+					currentPayload = MessageUtil.unwrapPayload(proposal, Order.class);
 					LOG.info(getAID().getName() + " received order " + currentPayload);
 				}
 			}

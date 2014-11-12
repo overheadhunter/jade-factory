@@ -129,7 +129,7 @@ abstract class AbstractStation extends Agent {
 			final MessageTemplate mt = MessageTemplate.MatchConversationId("enqueue");
 			final ACLMessage msg = myAgent.receive(mt);
 			if (msg != null) {
-				final Order order = MessageUtil.unwrapPayload(msg);
+				final Order order = MessageUtil.unwrapPayload(msg, Order.class);
 				final ACLMessage reply = msg.createReply();
 				if (order != null && inQueue.offer(order)) {
 					reply.setPerformative(ACLMessage.INFORM);
