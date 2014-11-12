@@ -30,21 +30,22 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 
 	private static final long serialVersionUID = 5093362251079611218L;
 	private static final Logger LOG = LoggerFactory.getLogger(YouBot.class);
-	
+
 	private Order currentPayload = null;
 	private Set<ServiceType> nextStepsForCurrentPayload = Collections.emptySet();
 
 	@Override
 	protected void setup() {
 		LOG.info("Registered YouBot " + getAID().getName());
-		addBehaviour(new AskForWorkBehaviour(this, 5000));
+		
+		addBehaviour(new AskForWorkBehaviour(this, 1500));
 	}
-	
+
 	@Override
 	public Collection<String> servicesToCall(String conversationId) {
 		if (CONV_ID_PICKUP.equals(conversationId)) {
 			return EnumSet.allOf(ServiceType.class).stream().map(st -> st.name()).collect(Collectors.toSet());
-		} else if(CONV_ID_DROPOFF.equals(conversationId)) {
+		} else if (CONV_ID_DROPOFF.equals(conversationId)) {
 			return nextStepsForCurrentPayload.stream().map(st -> st.name()).collect(Collectors.toSet());
 		} else {
 			return Collections.emptySet();
@@ -54,10 +55,10 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 	@Override
 	public Date getProposalDeadline(String conversationId) {
 		final Calendar cal = new GregorianCalendar();
-		cal.add(Calendar.SECOND, 1);
+		cal.add(Calendar.MILLISECOND, 500);
 		return cal.getTime();
 	}
-	
+
 	@Override
 	public void configureCfp(String conversationId, ACLMessage cfp) {
 		if (CONV_ID_PICKUP.equals(conversationId)) {
@@ -66,7 +67,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 			cfp.setContent("I want to drop of my order...");
 		}
 	}
-	
+
 	@Override
 	public ACLMessage chooseProposal(String conversationId, Collection<ACLMessage> proposals) {
 		LOG.trace("{} got {} proposals.", getAID().getName(), proposals.size());
@@ -95,7 +96,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 		}
 		return bestProposal;
 	}
-	
+
 	private ACLMessage chooseDropoffProposalWithShortestQueue(Collection<ACLMessage> proposals) {
 		ACLMessage bestProposal = null;
 		int maxQueueLength = Integer.MAX_VALUE;
@@ -114,7 +115,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 	}
 
 	@Override
-	public ACLMessage createResponseForProposal(String conversationId, ACLMessage bestProposal) throws ResponseCreationException {
+	public ACLMessage createAcceptResponseForProposal(String conversationId, ACLMessage bestProposal) throws ResponseCreationException {
 		if (CONV_ID_PICKUP.equals(conversationId)) {
 			final ACLMessage response = bestProposal.createReply();
 			response.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
@@ -151,7 +152,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 			addBehaviour(new InformationRequestingBehaviour(Constants.CONV_ID_QUERY_NEXT_ASSEMBLY_STEPS, this));
 		}
 	}
-	
+
 	@Override
 	public AID getInformationProvidingAgent() {
 		if (currentPayload == null) {
@@ -160,13 +161,13 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 			return currentPayload.getAID();
 		}
 	}
-	
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public void didReceiveInformationResponse(ACLMessage response) {
 		nextStepsForCurrentPayload = MessageUtil.unwrapPayload(response, EnumSet.class);
 	}
-	
+
 	/**
 	 * Asks for work regularily, if idle.
 	 */
@@ -188,5 +189,5 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 		}
 
 	}
-	
+
 }

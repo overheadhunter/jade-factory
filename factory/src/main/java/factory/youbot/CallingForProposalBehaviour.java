@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,9 +76,9 @@ public class CallingForProposalBehaviour extends OneShotBehaviour {
 		return result;
 	}
 	
-	private void respondToProposal(ACLMessage request) {
+	private void acceptProposal(ACLMessage request) {
 		try {
-			ACLMessage response = caller.createResponseForProposal(conversationId, request);
+			final ACLMessage response = caller.createAcceptResponseForProposal(conversationId, request);
 			if (response != null) {
 				response.setReplyWith(messageId);
 				myAgent.send(response);
@@ -85,7 +86,16 @@ public class CallingForProposalBehaviour extends OneShotBehaviour {
 			}
 		} catch (ResponseCreationException e) {
 			LOG.warn(e.getMessage(), e);
-			ACLMessage response = e.createFailureResponse(request);
+			final ACLMessage response = e.createFailureResponse(request);
+			myAgent.send(response);
+		}
+	}
+	
+	private void rejectProposals(Collection<ACLMessage> proposals) {
+		for (final ACLMessage proposal : proposals) {
+			final ACLMessage response = proposal.createReply();
+			response.setConversationId(conversationId);
+			response.setPerformative(ACLMessage.REJECT_PROPOSAL);
 			myAgent.send(response);
 		}
 	}
@@ -113,7 +123,9 @@ public class CallingForProposalBehaviour extends OneShotBehaviour {
 			}
 			final ACLMessage bestProposal = caller.chooseProposal(conversationId, proposals);
 			if (bestProposal != null) {
-				respondToProposal(bestProposal);
+				acceptProposal(bestProposal);
+				final Collection<ACLMessage> others = proposals.stream().filter(p -> !p.equals(bestProposal)).collect(Collectors.toList());
+				rejectProposals(others);
 			}
 		}
 		
@@ -172,7 +184,7 @@ public class CallingForProposalBehaviour extends OneShotBehaviour {
 		 * @param bestProposal chosen by {@link #chooseProposal(Collection)}
 		 * @return response object or <code>null</code>, if not responding to proposal.
 		 */
-		ACLMessage createResponseForProposal(String conversationId, ACLMessage bestProposal) throws ResponseCreationException;
+		ACLMessage createAcceptResponseForProposal(String conversationId, ACLMessage bestProposal) throws ResponseCreationException;
 		
 		/**
 		 * @return positive number of milliseconds to wait for a response or <code>-1</code> if no response is needed.

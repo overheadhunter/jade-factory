@@ -1,13 +1,11 @@
 package factory.station;
 
 import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -27,8 +25,8 @@ abstract class AbstractStation extends Agent implements Proposing {
 	private static final long serialVersionUID = -504573009972336872L;
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractStation.class);
 
-	private final BlockingQueue<Order> inQueue = new LinkedBlockingQueue<>();
-	private final BlockingQueue<Order> outQueue = new LinkedBlockingQueue<>();
+	protected final BlockingQueue<Order> inQueue = new LinkedBlockingQueue<>();
+	protected final BlockingQueue<Order> outQueue = new LinkedBlockingQueue<>();
 
 	@Override
 	protected void setup() {
@@ -51,7 +49,6 @@ abstract class AbstractStation extends Agent implements Proposing {
 		// add behaviours:
 		this.addBehaviour(new ProposingBehaviour(Constants.CONV_ID_PICKUP, this));
 		this.addBehaviour(new ProposingBehaviour(Constants.CONV_ID_DROPOFF, this));
-		this.addBehaviour(new EnqueueingBehaviour());
 	}
 
 	@Override
@@ -65,21 +62,13 @@ abstract class AbstractStation extends Agent implements Proposing {
 		super.takeDown();
 	}
 
-	protected final Order takeNextOrder() throws InterruptedException {
-		return inQueue.take();
-	}
-
-	protected final void putFinishedOrder(Order order) throws InterruptedException {
-		outQueue.put(order);
-	}
-
 	protected abstract ServiceType getServiceType();
 
 	protected abstract String getStationName();
 
 	@Override
 	public ACLMessage createResponseForCfp(String conversationId, ACLMessage request) {
-		LOG.trace("{} received CFP.", getStationName());
+		LOG.trace("{} received CFP", getStationName());
 		if (Constants.CONV_ID_PICKUP.equals(conversationId) && !outQueue.isEmpty()) {
 			final ACLMessage response = request.createReply();
 			response.setPerformative(ACLMessage.PROPOSE);
@@ -121,33 +110,6 @@ abstract class AbstractStation extends Agent implements Proposing {
 		} else {
 			return null;
 		}
-	}
-
-	/**
-	 * Accepts one order from a youBot.
-	 */
-	private class EnqueueingBehaviour extends CyclicBehaviour {
-
-		private static final long serialVersionUID = -6855574067206356572L;
-
-		@Override
-		public void action() {
-			final MessageTemplate mt = MessageTemplate.MatchConversationId("enqueue");
-			final ACLMessage msg = myAgent.receive(mt);
-			if (msg != null) {
-				final Order order = MessageUtil.unwrapPayload(msg, Order.class);
-				final ACLMessage reply = msg.createReply();
-				if (order != null && inQueue.offer(order)) {
-					reply.setPerformative(ACLMessage.INFORM);
-					LOG.info("Enqueued order " + order + " in station " + getStationName());
-				} else {
-					reply.setPerformative(ACLMessage.FAILURE);
-					LOG.warn("Failed to enqueue order " + order + " in station " + getStationName());
-				}
-				myAgent.send(reply);
-			}
-		}
-
 	}
 
 }

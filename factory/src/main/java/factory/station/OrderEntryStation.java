@@ -20,7 +20,7 @@ public class OrderEntryStation extends AbstractStation {
 	protected void setup() {
 		super.setup();
 		
-		this.addBehaviour(new OrderCreatingBehaviour(this, 7500));
+		this.addBehaviour(new OrderCreatingBehaviour(this, 30000));
 	}
 
 	@Override
@@ -34,7 +34,7 @@ public class OrderEntryStation extends AbstractStation {
 	}
 	
 	/**
-	 * Assembles the next order in queue.
+	 * Adds new orders to the output queue.
 	 */
 	private class OrderCreatingBehaviour extends TickerBehaviour {
 		
@@ -50,7 +50,7 @@ public class OrderEntryStation extends AbstractStation {
 				final Order order = new Order();
 				final AgentController ac = getContainerController().acceptNewAgent(order.toString(), order);
 				ac.start();
-				putFinishedOrder(order);
+				outQueue.put(order);
 				LOG.info("New order " + order);
 			} catch (InterruptedException e) {
 				LOG.error("Failed to enqueue new order.", e);

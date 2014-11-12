@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:assembly="https://raw.githubusercontent.com/moriarty/mas-mas/master/rockin.assembly.xsd"
+  targetNamespace="https://raw.githubusercontent.com/moriarty/mas-mas/master/rockin.assembly.xsd">
+
+  <xs:simpleType name="action">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SOLDERING"/>
+      <xs:enumeration value="PRESSFITTING"/>
+      <xs:enumeration value="SCREWING"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="task">
+      <xs:sequence>
+        <xs:element name="action" type="assembly:action" />
+        <xs:element name="subtasks">
+          <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+              <xs:element name="task" type="assembly:task" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="assembly">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="task" type="assembly:task" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

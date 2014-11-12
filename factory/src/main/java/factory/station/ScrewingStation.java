@@ -1,10 +1,8 @@
 package factory.station;
 
-import factory.order.Order;
-
 public class ScrewingStation extends AbstractAssemblyStation {
-	
-	private static final long serialVersionUID = 1744214026475059005L;
+
+	private static final long serialVersionUID = -2181721592346982182L;
 
 	@Override
 	protected ServiceType getServiceType() {
@@ -14,11 +12,6 @@ public class ScrewingStation extends AbstractAssemblyStation {
 	@Override
 	protected String getStationName() {
 		return getAID().getLocalName();
-	}
-
-	@Override
-	protected void assemble(Order order) throws InterruptedException {
-		Thread.sleep(5000);
 	}
 
 }
