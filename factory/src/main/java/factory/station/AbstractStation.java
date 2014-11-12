@@ -50,6 +50,7 @@ abstract class AbstractStation extends Agent implements Proposing {
 
 		// add behaviours:
 		this.addBehaviour(new ProposingBehaviour(Constants.CONV_ID_PICKUP, this));
+		this.addBehaviour(new ProposingBehaviour(Constants.CONV_ID_DROPOFF, this));
 		this.addBehaviour(new EnqueueingBehaviour());
 	}
 
@@ -78,11 +79,16 @@ abstract class AbstractStation extends Agent implements Proposing {
 
 	@Override
 	public ACLMessage createResponseForCfp(String conversationId, ACLMessage request) {
-		LOG.debug("{} received CFP.", getStationName());
+		LOG.trace("{} received CFP.", getStationName());
 		if (Constants.CONV_ID_PICKUP.equals(conversationId) && !outQueue.isEmpty()) {
 			final ACLMessage response = request.createReply();
 			response.setPerformative(ACLMessage.PROPOSE);
 			response.setContent(Integer.toString(outQueue.size()));
+			return response;
+		} else if(Constants.CONV_ID_DROPOFF.equals(conversationId)) {
+			final ACLMessage response = request.createReply();
+			response.setPerformative(ACLMessage.PROPOSE);
+			response.setContent(Integer.toString(inQueue.size()));
 			return response;
 		} else {
 			return null;
@@ -94,7 +100,7 @@ abstract class AbstractStation extends Agent implements Proposing {
 		if (Constants.CONV_ID_PICKUP.equals(conversationId)) {
 			try {
 				final Order order = outQueue.poll();
-				LOG.debug("{} received ACCEPT_PROPOSAL and hands over item {}.", getStationName(), order);
+				LOG.debug("PICKUP from {} [in:{}, out:{}]", getStationName(), inQueue.size(), outQueue.size());
 				final ACLMessage response = request.createReply();
 				response.setPerformative(ACLMessage.INFORM);
 				response.setContentObject(order);
@@ -102,6 +108,16 @@ abstract class AbstractStation extends Agent implements Proposing {
 			} catch (IOException e) {
 				throw new ResponseCreationException("Failed to hand over order.", e);
 			}
+		} else if (Constants.CONV_ID_DROPOFF.equals(conversationId)) {
+			try {
+				final Order order = MessageUtil.unwrapPayload(request, Order.class);
+				inQueue.put(order);
+				LOG.debug("DROPOFF at {} [in:{}, out:{}]", getStationName(), inQueue.size(), outQueue.size());
+			} catch (InterruptedException e) {
+				throw new ResponseCreationException("Failed to receive order.", e);
+			}
+			// we don't need to respond...
+			return null;
 		} else {
 			return null;
 		}

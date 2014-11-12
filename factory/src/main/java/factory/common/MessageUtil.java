@@ -19,7 +19,9 @@ public final class MessageUtil {
 	public static <T extends Serializable> T unwrapPayload(ACLMessage msg, Class<T> type) {
 		try {
 			final Serializable payload = msg.getContentObject();
-			if (type.isAssignableFrom(payload.getClass())) {
+			if (payload == null) {
+				return null;
+			} else if (type.isAssignableFrom(payload.getClass())) {
 				return type.cast(payload);
 			}
 		} catch (UnreadableException e) {

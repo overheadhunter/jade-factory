@@ -2,6 +2,8 @@ package factory.station;
 
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
+import jade.wrapper.AgentController;
+import jade.wrapper.StaleProxyException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +30,7 @@ public class OrderEntryStation extends AbstractStation {
 
 	@Override
 	protected String getStationName() {
-		return getAID().getName();
+		return getAID().getLocalName();
 	}
 	
 	/**
@@ -36,20 +38,24 @@ public class OrderEntryStation extends AbstractStation {
 	 */
 	private class OrderCreatingBehaviour extends TickerBehaviour {
 		
+		private static final long serialVersionUID = 4362396144651504823L;
+		
 		public OrderCreatingBehaviour(Agent agent, long period) {
 			super(agent, period);
 		}
-
-		private static final long serialVersionUID = 4362396144651504823L;
 
 		@Override
 		public void onTick() {
 			try {
 				final Order order = new Order();
+				final AgentController ac = getContainerController().acceptNewAgent(order.toString(), order);
+				ac.start();
 				putFinishedOrder(order);
 				LOG.info("New order " + order);
 			} catch (InterruptedException e) {
 				LOG.error("Failed to enqueue new order.", e);
+			} catch (StaleProxyException e) {
+				LOG.error("Failed to create new order.", e);
 			}
 		}
 		

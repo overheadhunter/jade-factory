@@ -34,10 +34,8 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 		public void action() {
 			try {
 				final Order order = takeNextOrder();
-				LOG.info("Started assembly of order " + order);
 				assemble(order);
 				putFinishedOrder(order);
-				LOG.info("Finished assembly of order " + order);
 			} catch (InterruptedException e) {
 				LOG.error("Assembly failed.", e);
 			}

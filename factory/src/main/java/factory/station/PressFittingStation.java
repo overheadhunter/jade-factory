@@ -2,13 +2,13 @@ package factory.station;
 
 import factory.order.Order;
 
-public class SolderingStation extends AbstractAssemblyStation {
+public class PressFittingStation extends AbstractAssemblyStation {
 	
 	private static final long serialVersionUID = 1744214026475059005L;
 
 	@Override
 	protected ServiceType getServiceType() {
-		return ServiceType.SOLDERING;
+		return ServiceType.PRESSFITTING;
 	}
 
 	@Override

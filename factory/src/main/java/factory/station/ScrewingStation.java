@@ -2,13 +2,13 @@ package factory.station;
 
 import factory.order.Order;
 
-public class SolderingStation extends AbstractAssemblyStation {
+public class ScrewingStation extends AbstractAssemblyStation {
 	
 	private static final long serialVersionUID = 1744214026475059005L;
 
 	@Override
 	protected ServiceType getServiceType() {
-		return ServiceType.SOLDERING;
+		return ServiceType.SCREWING;
 	}
 
 	@Override
@@ -18,7 +18,7 @@ public class SolderingStation extends AbstractAssemblyStation {
 
 	@Override
 	protected void assemble(Order order) throws InterruptedException {
-		Thread.sleep(10000);
+		Thread.sleep(5000);
 	}
 
 }
