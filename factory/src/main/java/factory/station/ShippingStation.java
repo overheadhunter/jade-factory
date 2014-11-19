@@ -1,12 +1,13 @@
 package factory.station;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import factory.order.Order;
+import factory.visualization.VisualizationAdapter;
 
 public class ShippingStation extends AbstractStation {
 
@@ -43,9 +44,10 @@ public class ShippingStation extends AbstractStation {
 
 		@Override
 		public void onTick() {
-			final Order order = inQueue.poll();
+			final AID order = inQueue.poll();
 			if (order != null) {
-				LOG.info("Shipping order " + order);
+				VisualizationAdapter.visualizeStationQueueChange(ShippingStation.this.getLocalName(), inQueue.size(), outQueue.size());
+				LOG.debug("Shipping order " + order.getLocalName());
 			}
 		}
 

@@ -1,14 +1,16 @@
 package factory.station;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.ThreadedBehaviourFactory;
-import jade.lang.acl.ACLMessage;
-import factory.common.Constants;
+import jade.wrapper.ControllerException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import factory.order.Order;
+import factory.visualization.VisualizationAdapter;
 
 abstract class AbstractAssemblyStation extends AbstractStation {
 	
@@ -26,6 +28,7 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 	
 	protected void assemble(Order order) throws InterruptedException {
 		Thread.sleep(500);
+		order.assemble(getServiceType());
 	}
 	
 	/**
@@ -42,18 +45,15 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 		@Override
 		public void action() {
 			try {
-				final Order order = inQueue.take();
+				final AID orderAid = inQueue.take();
+				VisualizationAdapter.visualizeStationQueueChange(AbstractAssemblyStation.this.getLocalName(), inQueue.size(), outQueue.size());
 				
-				final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-				msg.setConversationId(Constants.CONV_ID_ASSEMBLE);
-				msg.addReceiver(order.getAID());
-				msg.setContent(getServiceType().name());
-				myAgent.send(msg);
-				
+				final Order order = getContainerController().getAgent(orderAid.getName(), true).getO2AInterface(Order.class);
 				assemble(order);
 
-				outQueue.put(order);
-			} catch (InterruptedException e) {
+				outQueue.put(orderAid);
+				VisualizationAdapter.visualizeStationQueueChange(AbstractAssemblyStation.this.getLocalName(), inQueue.size(), outQueue.size());
+			} catch (InterruptedException | ControllerException e) {
 				LOG.error("Assembly failed.", e);
 			}
 		}

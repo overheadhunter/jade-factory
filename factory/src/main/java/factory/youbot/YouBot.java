@@ -4,6 +4,7 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.wrapper.ControllerException;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -23,10 +24,10 @@ import factory.common.MessageUtil;
 import factory.common.ResponseCreationException;
 import factory.order.Order;
 import factory.station.ServiceType;
+import factory.visualization.VisualizationAdapter;
 import factory.youbot.CallingForProposalBehaviour.CallingForProposal;
-import factory.youbot.InformationRequestingBehaviour.InformationRequesting;
 
-public class YouBot extends Agent implements Constants, CallingForProposal, InformationRequesting {
+public class YouBot extends Agent implements Constants, CallingForProposal {
 
 	private static final long serialVersionUID = 5093362251079611218L;
 	private static final Logger LOG = LoggerFactory.getLogger(YouBot.class);
@@ -71,13 +72,18 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 	@Override
 	public ACLMessage chooseProposal(String conversationId, Collection<ACLMessage> proposals) {
 		LOG.trace("{} got {} proposals.", getAID().getName(), proposals.size());
+		final ACLMessage bestProposal;
 		if (CONV_ID_PICKUP.equals(conversationId)) {
-			return choosePickupProposalWithLongestQueue(proposals);
+			bestProposal = choosePickupProposalWithLongestQueue(proposals);
 		} else if (CONV_ID_DROPOFF.equals(conversationId)) {
-			return chooseDropoffProposalWithShortestQueue(proposals);
+			bestProposal = chooseDropoffProposalWithShortestQueue(proposals);
 		} else {
-			return null;
+			bestProposal = null;
 		}
+		if (bestProposal != null) {
+			VisualizationAdapter.visualizeYouBotMovement(this.getLocalName(), bestProposal.getSender().getLocalName());
+		}
+		return bestProposal;
 	}
 
 	private ACLMessage choosePickupProposalWithLongestQueue(Collection<ACLMessage> proposals) {
@@ -124,7 +130,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 			try {
 				final ACLMessage response = bestProposal.createReply();
 				response.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-				response.setContentObject(currentPayload);
+				response.setContentObject(currentPayload.getAID());
 				currentPayload = null;
 				nextStepsForCurrentPayload = Collections.emptySet();
 				return response;
@@ -147,25 +153,17 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 
 	@Override
 	public void didReceiveResponseForAcceptedProposal(String conversationId, ACLMessage response) {
-		if (CONV_ID_PICKUP.equals(conversationId)) {
-			currentPayload = MessageUtil.unwrapPayload(response, Order.class);
-			addBehaviour(new InformationRequestingBehaviour(Constants.CONV_ID_QUERY_NEXT_ASSEMBLY_STEPS, this));
+		if (CONV_ID_PICKUP.equals(conversationId) && currentPayload == null) {
+			try {
+				final AID aid = MessageUtil.unwrapPayload(response, AID.class);
+				currentPayload = getContainerController().getAgent(aid.getName(), true).getO2AInterface(Order.class);
+				nextStepsForCurrentPayload = currentPayload.getNextRequiredAssemblySteps();
+				
+				addBehaviour(new CallingForProposalBehaviour(CONV_ID_DROPOFF, this));
+			} catch (ControllerException e) {
+				LOG.error("Could not analyze order.", e);
+			}
 		}
-	}
-
-	@Override
-	public AID getInformationProvidingAgent() {
-		if (currentPayload == null) {
-			return null;
-		} else {
-			return currentPayload.getAID();
-		}
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public void didReceiveInformationResponse(ACLMessage response) {
-		nextStepsForCurrentPayload = MessageUtil.unwrapPayload(response, EnumSet.class);
 	}
 
 	/**
@@ -183,8 +181,6 @@ public class YouBot extends Agent implements Constants, CallingForProposal, Info
 		protected void onTick() {
 			if (currentPayload == null) {
 				myAgent.addBehaviour(new CallingForProposalBehaviour(Constants.CONV_ID_PICKUP, YouBot.this));
-			} else if (currentPayload != null && !nextStepsForCurrentPayload.isEmpty()) {
-				myAgent.addBehaviour(new CallingForProposalBehaviour(CONV_ID_DROPOFF, YouBot.this));
 			}
 		}
 

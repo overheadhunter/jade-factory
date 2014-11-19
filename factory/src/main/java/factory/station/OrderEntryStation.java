@@ -5,22 +5,27 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import factory.order.Order;
+import factory.order.OrderAgent;
+import factory.visualization.VisualizationAdapter;
 
 
 public class OrderEntryStation extends AbstractStation {
 	
 	private static final long serialVersionUID = -4667270809378640277L;
 	private static final Logger LOG = LoggerFactory.getLogger(OrderEntryStation.class);
+	private static final AtomicInteger ORDER_COUNTER = new AtomicInteger(1);
 	
 	@Override
 	protected void setup() {
 		super.setup();
 		
-		this.addBehaviour(new OrderCreatingBehaviour(this, 30000));
+		this.addBehaviour(new OrderCreatingBehaviour(this, 10000));
 	}
 
 	@Override
@@ -40,6 +45,7 @@ public class OrderEntryStation extends AbstractStation {
 		
 		private static final long serialVersionUID = 4362396144651504823L;
 		
+		
 		public OrderCreatingBehaviour(Agent agent, long period) {
 			super(agent, period);
 		}
@@ -47,11 +53,13 @@ public class OrderEntryStation extends AbstractStation {
 		@Override
 		public void onTick() {
 			try {
-				final Order order = new Order();
-				final AgentController ac = getContainerController().acceptNewAgent(order.toString(), order);
+				final String orderName = "Order_" + ORDER_COUNTER.getAndIncrement();
+				final Object[] args = {getAID()};
+				final AgentController ac = getContainerController().createNewAgent(orderName, OrderAgent.class.getName(), args);
 				ac.start();
-				outQueue.put(order);
-				LOG.info("New order " + order);
+				final Order order = ac.getO2AInterface(Order.class);
+				outQueue.put(order.getAID());
+				VisualizationAdapter.visualizeStationQueueChange(OrderEntryStation.this.getLocalName(), inQueue.size(), outQueue.size());
 			} catch (InterruptedException e) {
 				LOG.error("Failed to enqueue new order.", e);
 			} catch (StaleProxyException e) {

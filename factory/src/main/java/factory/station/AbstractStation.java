@@ -1,5 +1,6 @@
 package factory.station;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
@@ -17,16 +18,16 @@ import org.slf4j.LoggerFactory;
 import factory.common.Constants;
 import factory.common.MessageUtil;
 import factory.common.ResponseCreationException;
-import factory.order.Order;
 import factory.station.ProposingBehaviour.Proposing;
+import factory.visualization.VisualizationAdapter;
 
 abstract class AbstractStation extends Agent implements Proposing {
 
 	private static final long serialVersionUID = -504573009972336872L;
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractStation.class);
 
-	protected final BlockingQueue<Order> inQueue = new LinkedBlockingQueue<>();
-	protected final BlockingQueue<Order> outQueue = new LinkedBlockingQueue<>();
+	protected final BlockingQueue<AID> inQueue = new LinkedBlockingQueue<>();
+	protected final BlockingQueue<AID> outQueue = new LinkedBlockingQueue<>();
 
 	@Override
 	protected void setup() {
@@ -88,8 +89,8 @@ abstract class AbstractStation extends Agent implements Proposing {
 	public ACLMessage createResponseForAcceptedProposal(String conversationId, ACLMessage request) throws ResponseCreationException {
 		if (Constants.CONV_ID_PICKUP.equals(conversationId)) {
 			try {
-				final Order order = outQueue.poll();
-				LOG.debug("PICKUP from {} [in:{}, out:{}]", getStationName(), inQueue.size(), outQueue.size());
+				final AID order = outQueue.poll();
+				VisualizationAdapter.visualizeStationQueueChange(this.getLocalName(), inQueue.size(), outQueue.size());
 				final ACLMessage response = request.createReply();
 				response.setPerformative(ACLMessage.INFORM);
 				response.setContentObject(order);
@@ -99,9 +100,9 @@ abstract class AbstractStation extends Agent implements Proposing {
 			}
 		} else if (Constants.CONV_ID_DROPOFF.equals(conversationId)) {
 			try {
-				final Order order = MessageUtil.unwrapPayload(request, Order.class);
+				final AID order = MessageUtil.unwrapPayload(request, AID.class);
 				inQueue.put(order);
-				LOG.debug("DROPOFF at {} [in:{}, out:{}]", getStationName(), inQueue.size(), outQueue.size());
+				VisualizationAdapter.visualizeStationQueueChange(this.getLocalName(), inQueue.size(), outQueue.size());
 			} catch (InterruptedException e) {
 				throw new ResponseCreationException("Failed to receive order.", e);
 			}
