@@ -8,20 +8,26 @@ public class BlockingVisualizationCallback {
 	
 	private final Condition condition;
 	private final AtomicBoolean done;
+	private final Lock lock;
 	
 	BlockingVisualizationCallback(Lock lock) {
+		this.lock = lock;
 		this.condition = lock.newCondition();
 		this.done = new AtomicBoolean(false);
 	}
 	
 	public void done() {
-		done.set(true);
-		condition.signal();
+		synchronized (lock) {
+			done.set(true);
+			condition.signal();
+		}
 	}
 	
 	public void waitUntilDone() throws InterruptedException {
 		while (!done.get()) {
-			condition.wait();
+			synchronized (lock) {
+				condition.await();
+			}
 		}
 	}
 
