@@ -9,7 +9,6 @@ import jade.wrapper.StaleProxyException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,11 +44,12 @@ public class SceneController implements Visualizing, Initializable {
 	private static final Object[] NO_ARGS = {};
 	private static final Logger LOG = LoggerFactory.getLogger(SceneController.class);
 	private final ContainerController jadeContainer;
-	private final AtomicInteger youBotCounter = new AtomicInteger(1);
-	private final AtomicInteger pressfittingCounter = new AtomicInteger(1);
-	private final AtomicInteger screwingCounter = new AtomicInteger(1);
-	private final AtomicInteger solderingCounter = new AtomicInteger(1);
-	private final Map<String, AgentVisualization> agents = new HashMap<>();
+	private final AtomicInteger youBotCounter = new AtomicInteger();
+	private final AtomicInteger pressfittingCounter = new AtomicInteger();
+	private final AtomicInteger screwingCounter = new AtomicInteger();
+	private final AtomicInteger solderingCounter = new AtomicInteger();
+	private final Map<String, AgentVisualization> stations = new HashMap<>();
+	private final Map<String, AgentVisualization> youBots = new HashMap<>();
 
 	@FXML
 	private Canvas canvas;
@@ -67,8 +67,8 @@ public class SceneController implements Visualizing, Initializable {
 			final AgentController exit = jadeContainer.createNewAgent("exit", ShippingStation.class.getName(), NO_ARGS);
 			entry.start();
 			exit.start();
-			agents.put("entry", new StationVisualization(entry, 0.0, 250.0));
-			agents.put("exit", new StationVisualization(exit, 500.0, 250.0));
+			stations.put("entry", new StationVisualization(entry, 0.0, 250.0));
+			stations.put("exit", new StationVisualization(exit, 500.0, 250.0));
 			drawAll();
 		} catch (StaleProxyException e) {
 			LOG.error("Could not create new agent", e);
@@ -81,33 +81,7 @@ public class SceneController implements Visualizing, Initializable {
 			final String agentName = "youBot_" + youBotCounter.getAndIncrement();
 			final AgentController ctrl = jadeContainer.createNewAgent(agentName, YouBot.class.getName(), NO_ARGS);
 			ctrl.start();
-			agents.put(agentName, new YouBotVisualization(ctrl));
-			drawAll();
-		} catch (StaleProxyException e) {
-			LOG.error("Could not create new agent", e);
-		}
-	}
-
-	@FXML
-	public void addPressfittingStation(ActionEvent event) {
-		try {
-			final String agentName = "pressfitting_" + pressfittingCounter.getAndIncrement();
-			final AgentController ctrl = jadeContainer.createNewAgent(agentName, PressFittingStation.class.getName(), NO_ARGS);
-			ctrl.start();
-			agents.put(agentName, new StationVisualization(ctrl, 50.0 * screwingCounter.get(), 480.0));
-			drawAll();
-		} catch (StaleProxyException e) {
-			LOG.error("Could not create new agent", e);
-		}
-	}
-
-	@FXML
-	public void addScrewingStation(ActionEvent event) {
-		try {
-			final String agentName = "screwing_" + screwingCounter.getAndIncrement();
-			final AgentController ctrl = jadeContainer.createNewAgent(agentName, ScrewingStation.class.getName(), NO_ARGS);
-			ctrl.start();
-			agents.put(agentName, new StationVisualization(ctrl, 250 + 50.0 * screwingCounter.get(), 20.0));
+			youBots.put(agentName, new YouBotVisualization(ctrl));
 			drawAll();
 		} catch (StaleProxyException e) {
 			LOG.error("Could not create new agent", e);
@@ -120,7 +94,33 @@ public class SceneController implements Visualizing, Initializable {
 			final String agentName = "soldering_" + solderingCounter.getAndIncrement();
 			final AgentController ctrl = jadeContainer.createNewAgent(agentName, SolderingStation.class.getName(), NO_ARGS);
 			ctrl.start();
-			agents.put(agentName, new StationVisualization(ctrl, 50.0 * solderingCounter.get(), 20.0));
+			stations.put(agentName, new StationVisualization(ctrl, 50.0 * solderingCounter.get(), 20.0));
+			drawAll();
+		} catch (StaleProxyException e) {
+			LOG.error("Could not create new agent", e);
+		}
+	}
+	
+	@FXML
+	public void addScrewingStation(ActionEvent event) {
+		try {
+			final String agentName = "screwing_" + screwingCounter.getAndIncrement();
+			final AgentController ctrl = jadeContainer.createNewAgent(agentName, ScrewingStation.class.getName(), NO_ARGS);
+			ctrl.start();
+			stations.put(agentName, new StationVisualization(ctrl, 250 + 50.0 * screwingCounter.get(), 20.0));
+			drawAll();
+		} catch (StaleProxyException e) {
+			LOG.error("Could not create new agent", e);
+		}
+	}
+	
+	@FXML
+	public void addPressfittingStation(ActionEvent event) {
+		try {
+			final String agentName = "pressfitting_" + pressfittingCounter.getAndIncrement();
+			final AgentController ctrl = jadeContainer.createNewAgent(agentName, PressFittingStation.class.getName(), NO_ARGS);
+			ctrl.start();
+			stations.put(agentName, new StationVisualization(ctrl, 50.0 * pressfittingCounter.get(), 480.0));
 			drawAll();
 		} catch (StaleProxyException e) {
 			LOG.error("Could not create new agent", e);
@@ -129,8 +129,7 @@ public class SceneController implements Visualizing, Initializable {
 
 	@Override
 	public void stationQueueDidChange(String stationId, Integer inQueue, Integer outQueue) {
-		LOG.info("Queue of station {} changed. IN: {} OUT: {}", stationId, inQueue, outQueue);
-		final AgentVisualization station = agents.get(stationId);
+		final AgentVisualization station = stations.get(stationId);
 		station.setInQueueLength(inQueue);
 		station.setOutQueueLength(outQueue);
 		Platform.runLater(new Runnable() {
@@ -143,14 +142,15 @@ public class SceneController implements Visualizing, Initializable {
 
 	@Override
 	public void youBotWillMoveTo(String youBotId, String stationId, BlockingVisualizationCallback callbackWhenDone) {
-		final AgentVisualization youBot = agents.get(youBotId);
-		final AgentVisualization station = agents.get(stationId);
+		final AgentVisualization youBot = youBots.get(youBotId);
+		final AgentVisualization station = stations.get(stationId);
+		final double distance = Math.sqrt(Math.abs(youBot.getPosX() - station.getPosX()) + Math.abs(youBot.getPosY() - station.getPosY()));
 		final DoubleProperty x = new SimpleDoubleProperty(youBot.getPosX());
 		final DoubleProperty y = new SimpleDoubleProperty(youBot.getPosY());
 		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
-				final Timeline tl = new Timeline(new KeyFrame(Duration.seconds(1.0), new KeyValue(x, station.getPosX()), new KeyValue(y, station.getPosY())));
+				final Timeline tl = new Timeline(new KeyFrame(Duration.millis(50.0*distance), new KeyValue(x, station.getPosX()), new KeyValue(y, station.getPosY())));
 				final AnimationTimer timer = new AnimationTimer() {
 					@Override
 					public void handle(long now) {
@@ -174,8 +174,11 @@ public class SceneController implements Visualizing, Initializable {
 
 	private void drawAll() {
 		canvas.getGraphicsContext2D().clearRect(0.0, 0.0, canvas.getWidth(), canvas.getHeight());
-		for (Entry<String, AgentVisualization> entry : agents.entrySet()) {
-			entry.getValue().draw(canvas.getGraphicsContext2D());
+		for (AgentVisualization agent : stations.values()) {
+			agent.draw(canvas.getGraphicsContext2D());
+		}
+		for (AgentVisualization agent : youBots.values()) {
+			agent.draw(canvas.getGraphicsContext2D());
 		}
 	}
 

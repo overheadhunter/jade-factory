@@ -1,7 +1,5 @@
 package factory.station;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
@@ -22,13 +20,11 @@ public class ProposingBehaviour extends CyclicBehaviour {
 	
 	private final String conversationId;
 	private final Proposing proposing;
-	private final AtomicBoolean negotiating;
 	
 	public <T extends Agent & Proposing> ProposingBehaviour(String conversationId, T agent) {
 		super(agent);
 		this.conversationId = conversationId;
 		this.proposing = agent;
-		this.negotiating = new AtomicBoolean();
 	}
 
 	@Override
@@ -40,16 +36,12 @@ public class ProposingBehaviour extends CyclicBehaviour {
 		} else {
 			switch (request.getPerformative()) {
 			case ACLMessage.CFP:
-				if(negotiating.compareAndSet(false, true)) {
-					respondToCfp(request);
-				}
+				respondToCfp(request);
 				return;
 			case ACLMessage.ACCEPT_PROPOSAL:
 				respondToAcceptProposal(request);
-				negotiating.lazySet(false);
 				return;
 			case ACLMessage.REJECT_PROPOSAL:
-				negotiating.lazySet(false);
 				return;
 			default:
 				return;
@@ -62,8 +54,6 @@ public class ProposingBehaviour extends CyclicBehaviour {
 			final ACLMessage response = proposing.createResponseForCfp(conversationId, request);
 			if (response != null) {
 				myAgent.send(response);
-			} else {
-				negotiating.set(false);
 			}
 		} catch (ResponseCreationException e) {
 			LOG.warn(e.getMessage(), e);

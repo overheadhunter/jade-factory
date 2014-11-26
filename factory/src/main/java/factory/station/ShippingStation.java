@@ -18,7 +18,7 @@ public class ShippingStation extends AbstractStation {
 	protected void setup() {
 		super.setup();
 
-		this.addBehaviour(new ShippingBehaviour(this, 1000));
+		this.addBehaviour(new ShippingBehaviour(this, 3000));
 	}
 
 	@Override

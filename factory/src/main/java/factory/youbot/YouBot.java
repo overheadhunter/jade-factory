@@ -39,7 +39,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 	protected void setup() {
 		LOG.info("Registered YouBot " + getAID().getName());
 		
-		addBehaviour(new AskForWorkBehaviour(this, 1500));
+		addBehaviour(new AskForWorkBehaviour(this, 1000));
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 
 	@Override
 	public ACLMessage chooseProposal(String conversationId, Collection<ACLMessage> proposals) {
-		LOG.trace("{} got {} proposals.", getAID().getName(), proposals.size());
+		LOG.trace("{} got {} proposals.", getAID().getLocalName(), proposals.size());
 		final ACLMessage bestProposal;
 		if (CONV_ID_PICKUP.equals(conversationId)) {
 			bestProposal = choosePickupProposalWithLongestQueue(proposals);
@@ -145,7 +145,7 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 	@Override
 	public long waitForResponseForAcceptedProposal(String conversationId) {
 		if (CONV_ID_PICKUP.equals(conversationId)) {
-			return 500;
+			return 100;
 		} else {
 			return -1;
 		}
@@ -156,10 +156,11 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 		if (CONV_ID_PICKUP.equals(conversationId) && currentPayload == null) {
 			try {
 				final AID aid = MessageUtil.unwrapPayload(response, AID.class);
-				currentPayload = getContainerController().getAgent(aid.getName(), true).getO2AInterface(Order.class);
-				nextStepsForCurrentPayload = currentPayload.getNextRequiredAssemblySteps();
-				
-				addBehaviour(new CallingForProposalBehaviour(CONV_ID_DROPOFF, this));
+				if (aid != null) {
+					currentPayload = getContainerController().getAgent(aid.getName(), true).getO2AInterface(Order.class);
+					nextStepsForCurrentPayload = currentPayload.getNextRequiredAssemblySteps();
+					addBehaviour(new CallingForProposalBehaviour(CONV_ID_DROPOFF, this));
+				}
 			} catch (ControllerException e) {
 				LOG.error("Could not analyze order.", e);
 			}

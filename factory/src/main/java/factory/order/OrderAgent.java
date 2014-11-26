@@ -51,7 +51,6 @@ public class OrderAgent extends Agent implements Order, Serializable {
 		final Task task = rootTask.getNextAssemblyStep(action);
 		if (task != null) {
 			task.setFinished(true);
-			LOG.debug("{} - assembled {}", action, this);
 		}
 	}
 

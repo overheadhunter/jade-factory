@@ -10,9 +10,9 @@
 		<ToolBar>
 			<items>
 				<Button text="Add youBot" onAction="#addYouBot"/>
-				<Button text="Add pressfitting" onAction="#addPressfittingStation"/>
-				<Button text="Add screwing" onAction="#addScrewingStation"/>
-				<Button text="Add soldering" onAction="#addSolderingStation"/>
+				<Button text="Add soldering ←" onAction="#addSolderingStation"/>
+				<Button text="Add screwing →" onAction="#addScrewingStation"/>
+				<Button text="Add pressfitting ↓" onAction="#addPressfittingStation"/>
 			</items>
 		</ToolBar>
 		<Canvas fx:id="canvas" width="500.0" height="500.0"/>

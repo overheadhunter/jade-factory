@@ -2,7 +2,6 @@ package factory.station;
 
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.ThreadedBehaviourFactory;
 import jade.core.behaviours.TickerBehaviour;
@@ -33,6 +32,9 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 		order.assemble(getServiceType());
 	}
 	
+	/**
+	 * Check length of in-queue.
+	 */
 	private class CheckInQueueBehaviour extends TickerBehaviour {
 		
 		private static final long serialVersionUID = -7036548104596688712L;
@@ -51,7 +53,7 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 	}
 	
 	/**
-	 * Assembles the next order in queue.
+	 * Assembles the next order.
 	 */
 	private class AssembleBehaviour extends OneShotBehaviour {
 		
