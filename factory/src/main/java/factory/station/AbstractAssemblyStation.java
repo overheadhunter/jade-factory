@@ -3,7 +3,9 @@ package factory.station;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.ThreadedBehaviourFactory;
+import jade.core.behaviours.TickerBehaviour;
 import jade.wrapper.ControllerException;
 
 import org.slf4j.Logger;
@@ -23,24 +25,37 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 		super.setup();
 		
 		// add behaviours
-		this.addBehaviour(THREADED_BEHAVIOUR_FACTORY.wrap(new AssembleBehaviour(this)));
+		this.addBehaviour(new CheckInQueueBehaviour(this, 2000));
 	}
 	
 	protected void assemble(Order order) throws InterruptedException {
-		Thread.sleep(500);
+		Thread.sleep(5000);
 		order.assemble(getServiceType());
+	}
+	
+	private class CheckInQueueBehaviour extends TickerBehaviour {
+		
+		private static final long serialVersionUID = -7036548104596688712L;
+
+		public CheckInQueueBehaviour(Agent a, long period) {
+			super(a, period);
+		}
+
+		@Override
+		protected void onTick() {
+			if (inQueue.peek() != null) {
+				myAgent.addBehaviour(THREADED_BEHAVIOUR_FACTORY.wrap(new AssembleBehaviour()));
+			}
+		}
+		
 	}
 	
 	/**
 	 * Assembles the next order in queue.
 	 */
-	private class AssembleBehaviour extends CyclicBehaviour {
+	private class AssembleBehaviour extends OneShotBehaviour {
 		
 		private static final long serialVersionUID = 4362396144651504823L;
-		
-		public AssembleBehaviour(Agent agent) {
-			super(agent);
-		}
 
 		@Override
 		public void action() {

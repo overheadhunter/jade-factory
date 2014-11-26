@@ -13,11 +13,19 @@ import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
+import javafx.util.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,22 +139,35 @@ public class SceneController implements Visualizing, Initializable {
 				drawAll();
 			}
 		});
-
 	}
 
 	@Override
 	public void youBotWillMoveTo(String youBotId, String stationId, BlockingVisualizationCallback callbackWhenDone) {
-		LOG.info("Youbot {} moves to station {}", youBotId, stationId);
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
-			// who cares
-		}
-		callbackWhenDone.done();
+		final AgentVisualization youBot = agents.get(youBotId);
+		final AgentVisualization station = agents.get(stationId);
+		final DoubleProperty x = new SimpleDoubleProperty(youBot.getPosX());
+		final DoubleProperty y = new SimpleDoubleProperty(youBot.getPosY());
 		Platform.runLater(new Runnable() {
 			@Override
 			public void run() {
-				drawAll();
+				final Timeline tl = new Timeline(new KeyFrame(Duration.seconds(1.0), new KeyValue(x, station.getPosX()), new KeyValue(y, station.getPosY())));
+				final AnimationTimer timer = new AnimationTimer() {
+					@Override
+					public void handle(long now) {
+						youBot.setPosX(x.doubleValue());
+						youBot.setPosY(y.doubleValue());
+						drawAll();
+					}
+				};
+				tl.setOnFinished(new EventHandler<ActionEvent>() {
+					@Override
+					public void handle(ActionEvent event) {
+						callbackWhenDone.done();
+						timer.stop();
+					}
+				});
+				timer.start();
+				tl.play();
 			}
 		});
 	}

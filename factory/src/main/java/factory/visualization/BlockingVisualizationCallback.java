@@ -3,31 +3,32 @@ package factory.visualization;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class BlockingVisualizationCallback {
 	
-	private final Condition condition;
-	private final AtomicBoolean done;
-	private final Lock lock;
-	
-	BlockingVisualizationCallback(Lock lock) {
-		this.lock = lock;
-		this.condition = lock.newCondition();
-		this.done = new AtomicBoolean(false);
-	}
+	private final Lock lock = new ReentrantLock();
+	private final Condition condition = lock.newCondition();
+	private final AtomicBoolean done = new AtomicBoolean(false);
 	
 	public void done() {
-		synchronized (lock) {
+		lock.lock();
+		try {
 			done.set(true);
 			condition.signal();
+		} finally {
+			lock.unlock();
 		}
 	}
 	
 	public void waitUntilDone() throws InterruptedException {
-		while (!done.get()) {
-			synchronized (lock) {
+		lock.lock();
+		try {
+			while (!done.get()) {
 				condition.await();
 			}
+		} finally {
+			lock.unlock();
 		}
 	}
 

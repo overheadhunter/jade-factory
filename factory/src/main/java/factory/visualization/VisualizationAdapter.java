@@ -1,8 +1,5 @@
 package factory.visualization;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import factory.visualization.log.LoggingVisualizer;
 
 public final class VisualizationAdapter {
@@ -18,16 +15,12 @@ public final class VisualizationAdapter {
 	}
 	
 	public static void visualizeYouBotMovement(String youBotId, String stationId) {
-		final Lock lock = new ReentrantLock();
-		lock.lock();
 		try {
-			final BlockingVisualizationCallback callback = new BlockingVisualizationCallback(lock);
+			final BlockingVisualizationCallback callback = new BlockingVisualizationCallback();
 			visualizer.youBotWillMoveTo(youBotId, stationId, callback);
 			callback.waitUntilDone();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		} finally {
-			lock.unlock();
 		}
 	}
 

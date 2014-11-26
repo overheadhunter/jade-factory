@@ -13,10 +13,11 @@ public class FactoryGui extends Application {
 		final Parent root = FXMLLoader.load(getClass().getResource("/gui.fxml"));
 		final Scene scene = new Scene(root);
 		primaryStage.setTitle("Rockin Factory");
-		primaryStage.centerOnScreen();
-		primaryStage.show();
+		primaryStage.setResizable(false);
 		primaryStage.setScene(scene);
 		primaryStage.sizeToScene();
+		primaryStage.centerOnScreen();
+		primaryStage.show();
 	}
 
 }
