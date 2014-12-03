@@ -21,20 +21,22 @@ public class OrderAgent extends Agent implements Order, Serializable {
 	
 	public OrderAgent() {
 		registerO2AInterface(Order.class, this);
+		try {
+			final InputStream in = OrderAgent.class.getResourceAsStream("/default-assembly.xml");
+			rootTask = TaskFactory.createTaskTree(in);
+		} catch (InvalidOrderException e) {
+			LOG.error("Invalid assembly instructions.", e);
+		}
 	}
 	
 	@Override
 	protected void setup() {
 		super.setup();
 		
-		try {
-			final InputStream in = OrderAgent.class.getResourceAsStream("/default-assembly.xml");
-			rootTask = TaskFactory.createTaskTree(in);
-		} catch (InvalidOrderException e) {
-			LOG.error("Invalid assembly instructions.", e);
+		if (rootTask == null) {
+			LOG.warn("Invalid assembly tasks. Shutting down agent.");
 			this.doDelete();
 		}
-		
 	}
 	
 	@Override
