@@ -16,14 +16,28 @@ public class LoggingVisualizer implements Visualizing {
 	}
 
 	@Override
-	public void youBotWillMoveTo(String youBotId, String stationId, BlockingVisualizationCallback callbackWhenDone) {
-		LOG.info("Youbot {} moves to station {}", youBotId, stationId);
+	public void youBotWillMoveTo(String youBotId, String stationId, boolean withPayload, BlockingVisualizationCallback callbackWhenDone) {
+		if (withPayload) {
+			LOG.info("Youbot {} carries sth. to station {}", youBotId, stationId);
+		} else {
+			LOG.info("Youbot {} moves to station {}", youBotId, stationId);
+		}
 		try {
 			Thread.sleep(2500);
 		} catch (InterruptedException e) {
 			// ignore
 		}
 		callbackWhenDone.done();
+	}
+
+	@Override
+	public void stationStartsWorking(String stationId) {
+		LOG.info("Station {} is now working.", stationId);
+	}
+
+	@Override
+	public void stationStopsWorking(String stationId) {
+		LOG.info("Station {} stopped working.", stationId);
 	}
 
 }

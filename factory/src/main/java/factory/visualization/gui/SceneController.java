@@ -139,10 +139,23 @@ public class SceneController implements Visualizing, Initializable {
 			}
 		});
 	}
+	
+	@Override
+	public void stationStartsWorking(String stationId) {
+		final StationVisualization station = (StationVisualization) stations.get(stationId);
+		station.setCurrentlyDoingStuff(true);
+	}
 
 	@Override
-	public void youBotWillMoveTo(String youBotId, String stationId, BlockingVisualizationCallback callbackWhenDone) {
-		final AgentVisualization youBot = youBots.get(youBotId);
+	public void stationStopsWorking(String stationId) {
+		final StationVisualization station = (StationVisualization) stations.get(stationId);
+		station.setCurrentlyDoingStuff(false);
+	}
+
+	@Override
+	public void youBotWillMoveTo(String youBotId, String stationId, boolean withPayload, BlockingVisualizationCallback callbackWhenDone) {
+		final YouBotVisualization youBot = (YouBotVisualization) youBots.get(youBotId);
+		youBot.setPayload(withPayload);
 		final AgentVisualization station = stations.get(stationId);
 		final double distance = Math.sqrt(Math.abs(youBot.getPosX() - station.getPosX()) + Math.abs(youBot.getPosY() - station.getPosY()));
 		final DoubleProperty x = new SimpleDoubleProperty(youBot.getPosX());
@@ -164,6 +177,7 @@ public class SceneController implements Visualizing, Initializable {
 					public void handle(ActionEvent event) {
 						callbackWhenDone.done();
 						timer.stop();
+						youBot.setPayload(false);
 					}
 				});
 				timer.start();

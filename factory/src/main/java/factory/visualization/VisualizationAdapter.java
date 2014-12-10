@@ -14,10 +14,18 @@ public final class VisualizationAdapter {
 		visualizer.stationQueueDidChange(stationId, inQueue, outQueue);
 	}
 	
-	public static void visualizeYouBotMovement(String youBotId, String stationId) {
+	public static void visualizeStationStartsWorking(String stationId) {
+		visualizer.stationStartsWorking(stationId);
+	}
+	
+	public static void visualizeStationStopsWorking(String stationId) {
+		visualizer.stationStopsWorking(stationId);
+	}
+	
+	public static void visualizeYouBotMovement(String youBotId, String stationId, boolean withPayload) {
 		try {
 			final BlockingVisualizationCallback callback = new BlockingVisualizationCallback();
-			visualizer.youBotWillMoveTo(youBotId, stationId, callback);
+			visualizer.youBotWillMoveTo(youBotId, stationId, withPayload, callback);
 			callback.waitUntilDone();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
