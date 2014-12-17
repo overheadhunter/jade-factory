@@ -81,8 +81,8 @@ public class YouBot extends Agent implements Constants, CallingForProposal {
 			bestProposal = null;
 		}
 		if (bestProposal != null) {
-			final boolean withPayload = CONV_ID_DROPOFF.equals(conversationId);
-			VisualizationAdapter.visualizeYouBotMovement(this.getLocalName(), bestProposal.getSender().getLocalName(), withPayload);
+			final String orderId = (currentPayload == null) ? null : currentPayload.getAID().getLocalName();
+			VisualizationAdapter.visualizeYouBotMovement(this.getLocalName(), bestProposal.getSender().getLocalName(), orderId);
 		}
 		return bestProposal;
 	}

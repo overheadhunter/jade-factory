@@ -28,10 +28,10 @@ abstract class AbstractAssemblyStation extends AbstractStation {
 	}
 	
 	protected void assemble(Order order) throws InterruptedException {
-		VisualizationAdapter.visualizeStationStartsWorking(this.getLocalName());
+		VisualizationAdapter.visualizeStationStartsWorking(this.getLocalName(), order.getAID().getLocalName());
 		Thread.sleep(5000);
 		order.assemble(getServiceType());
-		VisualizationAdapter.visualizeStationStopsWorking(this.getLocalName());
+		VisualizationAdapter.visualizeStationStopsWorking(this.getLocalName(), order.getAID().getLocalName());
 	}
 	
 	/**

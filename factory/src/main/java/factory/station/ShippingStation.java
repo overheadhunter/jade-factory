@@ -47,6 +47,7 @@ public class ShippingStation extends AbstractStation {
 			final AID order = inQueue.poll();
 			if (order != null) {
 				VisualizationAdapter.visualizeStationQueueChange(ShippingStation.this.getLocalName(), inQueue.size(), outQueue.size());
+				VisualizationAdapter.visualizeOrderArrival(order.getLocalName());
 				LOG.debug("Shipping order " + order.getLocalName());
 			}
 		}

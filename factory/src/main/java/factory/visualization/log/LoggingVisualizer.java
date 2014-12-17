@@ -9,6 +9,17 @@ import factory.visualization.Visualizing;
 public class LoggingVisualizer implements Visualizing {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(LoggingVisualizer.class);
+	
+	@Override
+	public void orderArrived(String orderId) {
+		LOG.info("{} arrived", orderId);
+	}
+	
+	@Override
+	public void orderShipped(String orderId) {
+		LOG.info("{} shipped", orderId);		
+	}
+
 
 	@Override
 	public void stationQueueDidChange(String stationId, Integer inQueue, Integer outQueue) {
@@ -16,8 +27,8 @@ public class LoggingVisualizer implements Visualizing {
 	}
 
 	@Override
-	public void youBotWillMoveTo(String youBotId, String stationId, boolean withPayload, BlockingVisualizationCallback callbackWhenDone) {
-		if (withPayload) {
+	public void youBotWillMoveTo(String youBotId, String stationId, String orderId, BlockingVisualizationCallback callbackWhenDone) {
+		if (orderId != null) {
 			LOG.info("Youbot {} carries sth. to station {}", youBotId, stationId);
 		} else {
 			LOG.info("Youbot {} moves to station {}", youBotId, stationId);
@@ -31,12 +42,12 @@ public class LoggingVisualizer implements Visualizing {
 	}
 
 	@Override
-	public void stationStartsWorking(String stationId) {
+	public void stationStartsWorking(String stationId, String orderId) {
 		LOG.info("Station {} is now working.", stationId);
 	}
 
 	@Override
-	public void stationStopsWorking(String stationId) {
+	public void stationStopsWorking(String stationId, String orderId) {
 		LOG.info("Station {} stopped working.", stationId);
 	}
 

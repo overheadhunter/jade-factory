@@ -126,6 +126,16 @@ public class SceneController implements Visualizing, Initializable {
 			LOG.error("Could not create new agent", e);
 		}
 	}
+	
+	@Override
+	public void orderArrived(String orderId) {
+		// ignore
+	}
+	
+	@Override
+	public void orderShipped(String orderId) {
+		// ignore		
+	}
 
 	@Override
 	public void stationQueueDidChange(String stationId, Integer inQueue, Integer outQueue) {
@@ -141,21 +151,21 @@ public class SceneController implements Visualizing, Initializable {
 	}
 	
 	@Override
-	public void stationStartsWorking(String stationId) {
+	public void stationStartsWorking(String stationId, String orderId) {
 		final StationVisualization station = (StationVisualization) stations.get(stationId);
 		station.setCurrentlyDoingStuff(true);
 	}
 
 	@Override
-	public void stationStopsWorking(String stationId) {
+	public void stationStopsWorking(String stationId, String orderId) {
 		final StationVisualization station = (StationVisualization) stations.get(stationId);
 		station.setCurrentlyDoingStuff(false);
 	}
 
 	@Override
-	public void youBotWillMoveTo(String youBotId, String stationId, boolean withPayload, BlockingVisualizationCallback callbackWhenDone) {
+	public void youBotWillMoveTo(String youBotId, String stationId, String orderId, BlockingVisualizationCallback callbackWhenDone) {
 		final YouBotVisualization youBot = (YouBotVisualization) youBots.get(youBotId);
-		youBot.setPayload(withPayload);
+		youBot.setPayload(orderId != null);
 		final AgentVisualization station = stations.get(stationId);
 		final double distance = Math.sqrt(Math.abs(youBot.getPosX() - station.getPosX()) + Math.abs(youBot.getPosY() - station.getPosY()));
 		final DoubleProperty x = new SimpleDoubleProperty(youBot.getPosX());

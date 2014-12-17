@@ -25,7 +25,7 @@ public class OrderEntryStation extends AbstractStation {
 	protected void setup() {
 		super.setup();
 		
-		this.addBehaviour(new OrderCreatingBehaviour(this, 5000));
+		this.addBehaviour(new OrderCreatingBehaviour(this, 30000));
 	}
 
 	@Override
@@ -59,6 +59,7 @@ public class OrderEntryStation extends AbstractStation {
 				ac.start();
 				final Order order = ac.getO2AInterface(Order.class);
 				outQueue.put(order.getAID());
+				VisualizationAdapter.visualizeOrderArrival(order.getAID().getLocalName());
 				VisualizationAdapter.visualizeStationQueueChange(OrderEntryStation.this.getLocalName(), inQueue.size(), outQueue.size());
 			} catch (InterruptedException e) {
 				LOG.error("Failed to enqueue new order.", e);

@@ -1,6 +1,7 @@
 package factory.visualization;
 
 import factory.visualization.log.LoggingVisualizer;
+import factory.visualization.unity.UnityVisualizer;
 
 public final class VisualizationAdapter {
 	
@@ -8,24 +9,32 @@ public final class VisualizationAdapter {
 		throw new IllegalStateException("Not instantiable.");
 	}
 	
-	private static Visualizing visualizer = new LoggingVisualizer();
+	private static Visualizing visualizer = new UnityVisualizer();
+	
+	public static void visualizeOrderArrival(String orderId) {
+		visualizer.orderArrived(orderId);
+	}
+	
+	public static void visualizeOrderShipping(String orderId) {
+		visualizer.orderShipped(orderId);
+	}
 	
 	public static void visualizeStationQueueChange(String stationId, Integer inQueue, Integer outQueue) {
 		visualizer.stationQueueDidChange(stationId, inQueue, outQueue);
 	}
 	
-	public static void visualizeStationStartsWorking(String stationId) {
-		visualizer.stationStartsWorking(stationId);
+	public static void visualizeStationStartsWorking(String stationId, String orderId) {
+		visualizer.stationStartsWorking(stationId, orderId);
 	}
 	
-	public static void visualizeStationStopsWorking(String stationId) {
-		visualizer.stationStopsWorking(stationId);
+	public static void visualizeStationStopsWorking(String stationId, String orderId) {
+		visualizer.stationStopsWorking(stationId, orderId);
 	}
 	
-	public static void visualizeYouBotMovement(String youBotId, String stationId, boolean withPayload) {
+	public static void visualizeYouBotMovement(String youBotId, String stationId, String orderId) {
 		try {
 			final BlockingVisualizationCallback callback = new BlockingVisualizationCallback();
-			visualizer.youBotWillMoveTo(youBotId, stationId, withPayload, callback);
+			visualizer.youBotWillMoveTo(youBotId, stationId, orderId, callback);
 			callback.waitUntilDone();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
