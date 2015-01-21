@@ -1,7 +1,6 @@
 package factory.visualization;
 
 import factory.visualization.log.LoggingVisualizer;
-import factory.visualization.unity.UnityVisualizer;
 
 public final class VisualizationAdapter {
 	
@@ -9,7 +8,7 @@ public final class VisualizationAdapter {
 		throw new IllegalStateException("Not instantiable.");
 	}
 	
-	private static Visualizing visualizer = new UnityVisualizer();
+	private static Visualizing visualizer;
 	
 	public static void visualizeOrderArrival(String orderId) {
 		visualizer.orderArrived(orderId);

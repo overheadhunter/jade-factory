@@ -25,7 +25,7 @@ public class OrderEntryStation extends AbstractStation {
 	protected void setup() {
 		super.setup();
 		
-		this.addBehaviour(new OrderCreatingBehaviour(this, 30000));
+		this.addBehaviour(new OrderCreatingBehaviour(this, 5000));
 	}
 
 	@Override
